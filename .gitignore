@@ -1,0 +1,12 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.positai
+
+# cached source web pages (re-creatable by R/01_download_akstar.R)
+data/raw/akstar/html/
+data/raw/science/html/
+logs/
+# raw NAEP API dump (29 MB; fully contained in data/processed/naep_states.csv)
+data/raw/naep/naep_api_raw.csv

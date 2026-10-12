@@ -1,0 +1,52 @@
+02 00050 Alaska Gateway School District                                               2397      466       78 sd24-ak.txt 17FEB2026 
+02 00010 Aleutian Region School District                                               516       20        2 sd24-ak.txt 17FEB2026 
+02 00007 Aleutians East Borough School District                                       3632      134       18 sd24-ak.txt 17FEB2026 
+02 00180 Anchorage School District                                                  289600    49233     4744 sd24-ak.txt 17FEB2026 
+02 00525 Annette Island School District                                               1560      287       61 sd24-ak.txt 17FEB2026 
+02 00020 Bering Strait School District                                                6214     1681      551 sd24-ak.txt 17FEB2026 
+02 00030 Bristol Bay Borough School District                                           884      124       26 sd24-ak.txt 17FEB2026 
+02 00730 Chatham School District                                                      1306      139       43 sd24-ak.txt 17FEB2026 
+02 00800 Chugach School District                                                       472       74       11 sd24-ak.txt 17FEB2026 
+02 00070 Copper River School District                                                 2502      486       96 sd24-ak.txt 17FEB2026 
+02 00060 Cordova City School District                                                 2426      391       33 sd24-ak.txt 17FEB2026 
+02 00090 Craig City School District                                                   1035      170       23 sd24-ak.txt 17FEB2026 
+02 00100 Delta/Greely School District                                                 5044      930      137 sd24-ak.txt 17FEB2026 
+02 00770 Denali Borough School District                                               1621      225       22 sd24-ak.txt 17FEB2026 
+02 00120 Dillingham City School District                                              2149      425       89 sd24-ak.txt 17FEB2026 
+02 00600 Fairbanks North Star Borough School District                                94951    15647     1210 sd24-ak.txt 17FEB2026 
+02 00130 Galena City School District                                                   450      114       19 sd24-ak.txt 17FEB2026 
+02 00270 Haines Borough School District                                               2104      242       32 sd24-ak.txt 17FEB2026 
+02 00300 Hoonah City School District                                                   910      126       19 sd24-ak.txt 17FEB2026 
+02 00330 Hydaburg City School District                                                 380       65       21 sd24-ak.txt 17FEB2026 
+02 00520 Iditarod Area School District                                                1048      224       84 sd24-ak.txt 17FEB2026 
+02 00210 Juneau Borough School District                                              31572     4823      331 sd24-ak.txt 17FEB2026 
+02 00360 Kake City School District                                                     542      111       27 sd24-ak.txt 17FEB2026 
+02 00005 Kashunamiut School District                                                   903      251       97 sd24-ak.txt 17FEB2026 
+02 00390 Kenai Peninsula Borough School District                                     61259    10020     1138 sd24-ak.txt 17FEB2026 
+02 00150 Ketchikan Gateway Borough School District                                   13677     2048      185 sd24-ak.txt 17FEB2026 
+02 00450 Klawock City School District                                                  719      122       34 sd24-ak.txt 17FEB2026 
+02 00480 Kodiak Island Borough School District                                       12654     2147      155 sd24-ak.txt 17FEB2026 
+02 00760 Kuspuk School District                                                       1397      324      104 sd24-ak.txt 17FEB2026 
+02 00485 Lake and Peninsula Borough School District                                   1315      257       78 sd24-ak.txt 17FEB2026 
+02 00001 Lower Kuskokwim School District                                             15263     3804     1197 sd24-ak.txt 17FEB2026 
+02 00003 Lower Yukon School District                                                  6474     1904      735 sd24-ak.txt 17FEB2026 
+02 00510 Matanuska-Susitna Borough School District                                  117613    22303     1743 sd24-ak.txt 17FEB2026 
+02 00540 Nenana City School District                                                   342       73       13 sd24-ak.txt 17FEB2026 
+02 00570 Nome School District                                                         3622      777      143 sd24-ak.txt 17FEB2026 
+02 00610 North Slope Borough School District                                         10663     1978      294 sd24-ak.txt 17FEB2026 
+02 00625 Northwest Arctic Borough School District                                     7134     2014      640 sd24-ak.txt 17FEB2026 
+02 00630 Pelican City School District                                                   96       11        2 sd24-ak.txt 17FEB2026 
+02 00660 Petersburg Borough School District                                           3436      523       46 sd24-ak.txt 17FEB2026 
+02 00670 Pribilof School District                                                      498       65        7 sd24-ak.txt 17FEB2026 
+02 00240 Sitka School District                                                        8355     1172       94 sd24-ak.txt 17FEB2026 
+02 00690 Skagway School District                                                      1119      127        3 sd24-ak.txt 17FEB2026 
+02 00700 Southeast Island School District                                             1510      190       47 sd24-ak.txt 17FEB2026 
+02 00710 Southwest Region School District                                             2493      629      303 sd24-ak.txt 17FEB2026 
+02 00680 St. Marys City School District                                                569      154       61 sd24-ak.txt 17FEB2026 
+02 00720 Unalaska City School District                                                4410      267        9 sd24-ak.txt 17FEB2026 
+02 00780 Valdez City School District                                                  3706      648       39 sd24-ak.txt 17FEB2026 
+02 00810 Wrangell School District                                                     2064      270       50 sd24-ak.txt 17FEB2026 
+02 00840 Yakutat School District                                                       690      119       34 sd24-ak.txt 17FEB2026 
+02 00775 Yukon Flats School District                                                  1105      215       37 sd24-ak.txt 17FEB2026 
+02 00862 Yukon-Koyukuk School District                                                2180      426       92 sd24-ak.txt 17FEB2026 
+02 00004 Yupiit School District                                                       1552      436      188 sd24-ak.txt 17FEB2026 
