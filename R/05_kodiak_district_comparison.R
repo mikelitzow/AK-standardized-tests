@@ -12,8 +12,10 @@
 # Inputs: data/processed/akstar_grade.csv, science_grade.csv, district_indicators.csv
 # Outputs: figs/kodiak_vs_districts_poverty.png
 #          figs/kodiak_vs_districts_poverty_grades_8_9.png
+#          figs/kodiak_vs_districts_poverty_grades_8_9_low_poverty.png (blow-up of the left side)
 #          figs/kodiak_vs_districts_poverty_science.png
 #          figs/diagnostics/kodiak_residuals_by_year_grade.png
+#          figs/kodiak_residuals_by_grade.png (public single-panel version, by grade)
 #          figs/diagnostics/correspondence_sensitivity.png
 #          data/processed/district_prof_poverty.csv
 #          data/processed/kodiak_fit_summary.csv
@@ -195,12 +197,16 @@ label_set <- c("Sitka", "Petersburg", "Cordova", "Kenai Peninsula")
 # quieter reference labels spread across the poverty range
 anchor_set <- c("Anchorage", "North Slope", "Nome", "Lower Kuskokwim", "Yupiit")
 
-source_note <- function(test = "AK STAR") paste0(
-  "Labeled for comparison: Sitka, Petersburg, Cordova and Kenai Peninsula, districts with child poverty similar to Kodiak's ",
-  "that scored above expected in English, math and science every year.\nGrey labels mark other districts across the poverty range.\n",
-  "Not shown: six districts whose statewide correspondence programs enroll mostly students who live elsewhere ",
+source_note <- function(test = "AK STAR", zoom = FALSE) paste0(
+  if (zoom) "Darker bubbles: " else "Labeled for comparison: ",
+  "Sitka, Petersburg, Cordova and Kenai Peninsula, districts with child poverty similar to Kodiak's ",
+  "that scored above expected in English, math and science every year.\n",
+  if (!zoom) "Grey labels mark other districts across the poverty range.\n",
+  if (zoom) "Not in the fits: " else "Not shown: ",
+  "six districts whose statewide correspondence programs enroll mostly students who live elsewhere ",
   "(Galena, Nenana, Yukon-Koyukuk, Chugach, Denali, Craig), and Mt. Edgecumbe (state boarding school).\n",
-  "Districts reported only as “5% or fewer” proficient are plotted at the midpoint of that range.\n",
+  if (zoom) "Results reported only as a range for a small group (Skagway: “75% or more”, “25% or fewer”) enter at the midpoint of the range.\n"
+  else "Districts reported only as “5% or fewer” proficient are plotted at the midpoint of that range.\n",
   "Sources: Alaska Department of Education & Early Development, ", test, " results; ",
   "U.S. Census Bureau, SAIPE school district estimates 2022–2024."
 )
@@ -209,15 +215,20 @@ source_note <- function(test = "AK STAR") paste0(
 # fit separately in each panel (each district counted once), Kodiak's
 # observed-to-expected bar, and a Kodiak callout in the upper middle.
 # d needs: panel (factor), district, pov, prof, enrollment
+# x_max: blow-up of the low-poverty end. The lines are still fit to every
+# district in d, but only districts with child poverty at or below x_max are
+# drawn, each one labeled; the y axis no longer starts at 0, the Kodiak callout
+# moves below and left of Kodiak, and the fit statistics are left to the caption.
 poverty_fit_plot <- function(d, size_name, size_breaks, free_y = FALSE, ncol = 2,
-                             max_size = 13) {
+                             max_size = 13, x_max = Inf) {
+  zoom <- is.finite(x_max)
   nested <- d |>
     nest(.by = panel) |>
     mutate(model = map(data, \(x) lm(prof ~ pov, x)))
 
   line_d <- nested |>
     mutate(line = map2(data, model, \(x, m) {
-      xs <- seq(min(x$pov), max(x$pov), length.out = 50)
+      xs <- seq(min(x$pov), min(max(x$pov), x_max), length.out = 50)
       tibble(x = xs, y = predict(m, tibble(pov = xs)))
     })) |>
     select(panel, line) |>
@@ -235,41 +246,50 @@ poverty_fit_plot <- function(d, size_name, size_breaks, free_y = FALSE, ncol = 2
     mutate(data = map2(data, model, \(x, m) mutate(x, expected = fitted(m), resid = resid(m)))) |>
     select(panel, data) |>
     unnest(data) |>
+    filter(pov <= x_max) |>
     mutate(is_kodiak = district == kodiak) |>
     arrange(desc(enrollment))
 
-  y_top <- pts |>
+  y_range <- pts |>
     group_by(panel) |>
-    summarise(y_top = max(prof)) |>
-    mutate(y_top = if (free_y) y_top else max(y_top))
+    summarise(y_top = max(prof), y_bot = if (zoom) min(prof) else 0) |>
+    mutate(y_top = if (free_y) y_top else max(y_top),
+           y_bot = if (free_y) y_bot else min(y_bot),
+           y_span = y_top - y_bot)
 
   k_d <- pts |>
     filter(is_kodiak) |>
-    left_join(y_top, by = "panel") |>
+    left_join(y_range, by = "panel") |>
     mutate(text = sprintf("Kodiak: %.1f%%\n%.1f points %s expected (%.1f%%)",
                           prof, abs(resid), if_else(resid < 0, "below", "above"), expected),
-           label_x = 13.5, label_y = 0.9 * y_top)
+           # leader runs from Kodiak to (lead_x, lead_y), next to the callout text
+           label_x = if (zoom) pov - 0.25 else 13.5,
+           label_y = if (zoom) y_bot - 0.08 * y_span else y_top - 0.1 * y_span,
+           lead_x = if (zoom) label_x + 0.05 else label_x - 0.4,
+           lead_y = if (zoom) label_y + 0.03 * y_span else label_y - 0.025 * y_span)
 
   # every point, Kodiak's observed-to-expected bar, its callout line and the
   # fit line go to the repel layer so labels avoid them all; only label_set
-  # districts get visible text
+  # districts (every district but Kodiak in a blow-up) get visible text
   label_d <- bind_rows(
-    pts |> transmute(panel, pov, prof,
-                     label = if_else(district %in% c(label_set, anchor_set), district, "")),
+    pts |> transmute(panel, pov, prof, enrollment,
+                     label = if_else((zoom & !is_kodiak) | district %in% c(label_set, anchor_set),
+                                     district, "")),
     k_d |> reframe(pov, prof = seq(prof, expected, length.out = 6), label = "", .by = panel),
-    k_d |> reframe(pov = seq(pov, label_x - 0.4, length.out = 15),
-                   prof = seq(prof, label_y - 0.025 * y_top, length.out = 15), label = "",
-                   .by = panel),
+    k_d |> reframe(pov = seq(pov, lead_x, length.out = 15),
+                   prof = seq(prof, lead_y, length.out = 15), label = "", .by = panel),
     line_d |> transmute(panel, pov = x, prof = y, label = "")
   ) |>
+    # in a blow-up, labels keep clear of each bubble's drawn size (scale_size_area)
+    mutate(psize = if (zoom) coalesce(max_size * sqrt(enrollment / max(pts$enrollment)), 1) else 1) |>
     # the three small peers sit within half a point of poverty of each other:
     # stack their labels to the left of the cluster; Kenai's label goes right
-    mutate(nudge = case_when(label == "Kenai Peninsula" ~ 3, label %in% label_set ~ -2.5,
+    mutate(nudge = case_when(zoom ~ 0, label == "Kenai Peninsula" ~ 3, label %in% label_set ~ -2.5,
                              label == "Anchorage" ~ 1.5, TRUE ~ 0),
            # Anchorage sits under the big low-poverty bubbles; send its label below them
-           nudge_y = if_else(label == "Anchorage", -0.12 * max(prof), 0),
-           col = if_else(label %in% label_set, ink2, muted),
-           hj = if_else(nudge < 0, 1, 0))
+           nudge_y = if_else(!zoom & label == "Anchorage", -0.12 * max(prof), 0),
+           col = if_else(zoom | label %in% label_set, ink2, muted),
+           hj = case_when(nudge < 0 ~ 1, zoom ~ 0.5, TRUE ~ 0))
 
   ggplot(pts, aes(pov, prof)) +
     geom_line(data = line_d, aes(x, y), colour = ink2, linewidth = 0.6) +
@@ -283,24 +303,28 @@ poverty_fit_plot <- function(d, size_name, size_breaks, free_y = FALSE, ncol = 2
                colour = orange, stroke = 0.9) +
     geom_point(data = k_d, aes(size = enrollment), shape = 21, fill = orange,
                colour = surface, stroke = 0.6) +
-    geom_text_repel(data = label_d, aes(label = label, hjust = hj, colour = col),
-                    nudge_x = label_d$nudge, nudge_y = label_d$nudge_y, direction = "y",
+    geom_text_repel(data = label_d, aes(label = label, hjust = hj, colour = col, point.size = psize),
+                    nudge_x = label_d$nudge, nudge_y = label_d$nudge_y,
+                    direction = if (zoom) "both" else "y",
                     family = font, size = 2.9, segment.colour = muted,
                     segment.size = 0.25, min.segment.length = 0, box.padding = 0.3,
                     point.padding = 0.2, seed = 3, max.overlaps = Inf) +
     scale_colour_identity() +
-    geom_segment(data = k_d, aes(xend = label_x - 0.4, yend = label_y - 0.025 * y_top),
-                 colour = orange, linewidth = 0.35) +
+    geom_segment(data = k_d, aes(xend = lead_x, yend = lead_y), colour = orange, linewidth = 0.35) +
     geom_text(data = k_d, aes(label_x, label_y, label = text), family = font, size = 3.2,
-              colour = ink, fontface = "bold", hjust = 0, vjust = 0.5, lineheight = 1.05) +
-    geom_text(data = stats_d, aes(x = max(pts$pov), y = Inf, label = text), inherit.aes = FALSE,
-              hjust = 1, vjust = 1.6, family = font, size = 2.8, colour = muted) +
+              colour = ink, fontface = "bold", hjust = if (zoom) 1 else 0, vjust = 0.5,
+              lineheight = 1.05) +
+    # room below the data for the blow-up's callout
+    (if (zoom) geom_blank(data = k_d, aes(y = label_y - 0.05 * y_span))) +
+    (if (!zoom) geom_text(data = stats_d, aes(x = max(pts$pov), y = Inf, label = text),
+                          inherit.aes = FALSE, hjust = 1, vjust = 1.6, family = font, size = 2.8,
+                          colour = muted)) +
     facet_wrap(~panel, ncol = ncol, scales = if (free_y) "free_y" else "fixed") +
     scale_size_area(max_size = max_size, breaks = size_breaks, labels = scales::comma,
                     name = size_name) +
-    scale_x_continuous(labels = \(x) paste0(x, "%"), breaks = seq(0, 40, 10)) +
+    scale_x_continuous(labels = \(x) paste0(x, "%"), breaks = seq(0, 40, if (zoom) 1 else 10)) +
     scale_y_continuous(labels = \(x) paste0(x, "%")) +
-    coord_cartesian(ylim = c(0, NA)) +
+    coord_cartesian(ylim = c(if (zoom) NA else 0, NA)) +
     labs(x = "Children ages 5–17 living in poverty", y = "Proficient or advanced") +
     theme_pub() +
     theme(legend.position = "top", legend.justification = "left",
@@ -358,6 +382,61 @@ p_89 <- grade_89 |>
   )
 
 save_png(p_89, "figs/kodiak_vs_districts_poverty_grades_8_9.png", width = 12, height = 11)
+
+# grades 8 and 9, blow-up of the low-poverty end: Kenai Peninsula and the districts
+# with lower child poverty, with each panel's line from the full fit -------------------
+
+kenai_pov <- districts$pov[districts$district == "Kenai Peninsula"]
+zoom_89 <- grade_89 |>
+  group_by(panel) |>
+  mutate(resid = resid(lm(prof ~ pov))) |>
+  ungroup() |>
+  filter(pov <= kenai_pov)
+n_zoom <- n_distinct(zoom_89$district)
+
+# the full-figure fits, for the caption (the blow-up has no room for them in the panels)
+fits_89 <- grade_89 |>
+  nest(.by = panel) |>
+  mutate(m = map(data, \(x) summary(lm(prof ~ pov, x))),
+         n = map_int(data, nrow), r2 = map_dbl(m, "r.squared"),
+         p = map_dbl(m, \(s) s$coefficients["pov", 4])) |>
+  arrange(panel)
+stopifnot(n_distinct(fits_89$n) == 1, all(fits_89$p < 0.001))
+
+# headline written after reviewing the blow-up: in both 9th-grade panels Kodiak has
+# the lowest score of the districts shown and falls furthest below its line
+zoom_title <- "Among Alaska's lower-poverty districts, Kodiak's 9th graders score lowest"
+zoom_check <- zoom_89 |>
+  filter(str_starts(panel, "9th")) |>
+  group_by(panel) |>
+  summarise(lowest = district[which.min(prof)], furthest_below = district[which.min(resid)])
+stopifnot(all(zoom_check$lowest == kodiak), all(zoom_check$furthest_below == kodiak),
+          setequal(zoom_89$district[zoom_89$any_range], "Skagway"))
+cat("\nBlow-up (child poverty at or below Kenai Peninsula's):", n_zoom, "districts\n")
+print(zoom_89 |> group_by(panel) |>
+        summarise(n = n(), above_line = sum(resid > 0),
+                  kodiak_rank_from_top = rank(-resid)[district == kodiak]))
+
+p_89_zoom <- grade_89 |>
+  poverty_fit_plot(size_name = "Students enrolled in the grade (average per year)",
+                   size_breaks = c(30, 300, 3000), free_y = TRUE, ncol = 2, max_size = 12,
+                   x_max = kenai_pov) +
+  labs(
+    title = zoom_title,
+    subtitle = paste0("Share of 8th and 9th graders proficient or advanced on AK STAR (2023–2026 combined) ",
+                      "vs. child poverty rate,\nfor the ", n_zoom, " districts with child poverty at or below ",
+                      sprintf("Kenai Peninsula's (%.1f%%)", kenai_pov)),
+    caption = paste0(
+      "Each bubble is a school district. This is the left side of the full statewide figure: each line is still the ",
+      "least-squares fit to all ", fits_89$n[1], " districts, each counted once,\n",
+      "drawn only over the range shown (R² = ", paste(sprintf("%.2f", fits_89$r2), collapse = ", "),
+      " in reading order; all p < 0.001). Each panel has its own vertical scale, which does not start at 0.\n",
+      "The orange bar runs from Kodiak's score to the score expected for its poverty rate.\n",
+      source_note(zoom = TRUE)
+    )
+  )
+
+save_png(p_89_zoom, "figs/kodiak_vs_districts_poverty_grades_8_9_low_poverty.png", width = 12, height = 11)
 
 # science: all tested grades and each grade, separate fit per panel --------------------------
 
@@ -452,6 +531,61 @@ p_var <- (p_year | p_grade) +
   )
 
 save_png(p_var, "figs/diagnostics/kodiak_residuals_by_year_grade.png", width = 11, height = 4.8)
+
+# public single-panel version: by grade, all years combined ----------------------------
+
+kodiak_id <- districts$district_id[districts$district == kodiak]
+
+# share of enrolled students tested, all years pooled: Kodiak and statewide
+participation <- function(d, g, subj) {
+  d |>
+    filter(grade == g, subject == subj, level == "State" | district_id == kodiak_id) |>
+    group_by(level) |>
+    summarise(pct = sprintf("%.0f%%", 100 * sum(tested) / sum(enrollment))) |>
+    deframe()
+}
+part_9 <- participation(akstar_grade, "9", "ELA")
+part_10 <- participation(science_grade, "10", "Science")
+
+ordinal <- \(x) paste0(x, if_else(x == 3, "rd", "th"))
+
+p_grade_public <- ggplot(grade_d, aes(grade, kodiak_resid, colour = subject)) +
+  geom_hline(yintercept = 0, colour = ink2, linewidth = 0.4) +
+  annotate("text", x = 9.5, y = 0, label = "Expected for Kodiak's\nchild poverty rate",
+           vjust = -0.35, family = font, size = 3, colour = ink2, lineheight = 1) +
+  geom_line(linewidth = 0.8) +
+  geom_point(aes(fill = subject), size = 3.2, shape = 21, colour = surface, stroke = 0.7) +
+  geom_text(data = end_labels(grade_d, grade), aes(label = short_subject[subject]),
+            hjust = 0, nudge_x = 0.15, family = font, size = 3.4, colour = ink2) +
+  scale_colour_manual(values = subj_cols) +
+  scale_fill_manual(values = subj_cols) +
+  scale_x_continuous(breaks = 3:10, labels = ordinal, expand = expansion(add = c(0.3, 0.9))) +
+  scale_y_continuous(breaks = seq(-15, 5, 5), labels = signed) +
+  labs(
+    title = "Kodiak vs. the score expected for its child poverty rate",
+    subtitle = "Share of students proficient or advanced, by grade (all years combined)",
+    x = "Grade", y = "Percentage points above or below expected",
+    caption = paste0(
+      "“Expected”: the score predicted for Kodiak's child poverty rate (",
+      sprintf("%.1f%%", districts$pov[districts$district == kodiak]), ") by a line fit across ",
+      min(by_grade$n), "–", max(by_grade$n), " Alaska districts for each grade and subject.\n",
+      "Not in the fits: Mt. Edgecumbe (state boarding school) and six districts that mostly enroll ",
+      "correspondence students who live elsewhere.\n",
+      "Kodiak tests more of its high schoolers than the state (", part_9[["District"]], " vs. ",
+      part_9[["State"]], " of 9th graders; ", part_10[["District"]], " vs. ", part_10[["State"]],
+      " of 10th graders).\n",
+      "If students who skip the test elsewhere tend to score lower, this makes Kodiak look slightly worse ",
+      "than a like-for-like comparison would.\n",
+      "English and math: AK STAR 2023–2026. Science: Alaska Science Assessment 2022–2026, ",
+      "given in grades 5, 8 and 10 only.\n",
+      "Sources: Alaska Department of Education & Early Development; U.S. Census Bureau, SAIPE school ",
+      "district estimates 2022–2024."
+    )
+  ) +
+  theme_pub() +
+  theme(legend.position = "none", panel.grid.major.x = element_blank())
+
+save_png(p_grade_public, "figs/kodiak_residuals_by_grade.png", width = 8.1, height = 6)
 
 # sensitivity: with and without non-local (correspondence) districts --------------------
 

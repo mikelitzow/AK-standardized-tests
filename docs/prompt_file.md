@@ -39,3 +39,17 @@
 
 # Edit
 - Change all of the plots to label Sitka, Petersburg, Cordova, and Kenia Peninsula.
+
+# Single panel
+- Make a single-panel version of kodiak_residuals_by_year_grade.png, plotting only the data for all years by grade.
+- Continue with the same presentation style, optimized for public communication.
+
+# MAP data
+- Scrape the web for MAP testing data across different districts in Alaska that would allow a similar comparison as what was done for AK STAR.
+
+# KIBSD ADM
+- Look up ADM numbers by building for KIBSD over the last ten years and make line plots of totals in all town schools and totals by school.
+
+# KIBSD preliminary ADM
+- Update the graphs with preliminary ADM data from this document (KIBSD Board Retreat packet, October 31, 2026).
+- Add a "total town schools" panel to the figure of results for each school and AK Teach (keep AK Teach off the total town schools panel).
